@@ -60,6 +60,135 @@ public:
 		: Vector3(0.0f, 0.0f, 0.0f)
 	{
 	}
+	
+	/**
+	 * Task 1: negative() member function
+	 */
+	Vector3 operator-() const
+    {
+        return Vector3(-x, -y, -z);
+    }
+	Vector3 negative()
+	{
+		Vector3 ret = -(*this);
+
+		if (ret.x == 0) ret.x = 0;
+		if (ret.y == 0) ret.y = 0;
+		if (ret.z == 0) ret.z = 0;
+
+		return ret;
+	}
+	
+	/**
+	 * Task 2: magnitude() member function
+	 */
+	float magnitude() {
+		float mag = std::sqrt(x * x + y * y + z * z);
+		return mag;
+	}
+	
+	/**
+	 * Task 3: squaredMagnitude() member function
+	 */
+	float squaredMagnitude() {
+		float squaredMag = x * x + y * y + z * z;
+		return squaredMag;
+	}
+
+	/**
+	 * Task 4: normalized() member function
+	 */
+	Vector3 normalized() {
+		float mag = magnitude();
+		Vector3 norm;
+		if (mag > 0) {
+			norm = Vector3(x/mag, y/mag, z/mag);
+		} else {
+			norm = Vector3(0, 0, 0);
+		}
+		return norm;
+	}
+	
+	/**
+	 * Task 5: add() static member function
+	 */
+	Vector3 operator+(const Vector3& other) const
+    {
+        return Vector3(x + other.x, y + other.y, z + other.z);
+    }
+	static Vector3 add(Vector3 a, Vector3 b)
+	{
+		Vector3 sum = a + b;
+		return sum;
+	}
+	
+	/**
+	 * Task 6: subtract() static member function
+	 */
+	Vector3 operator-(const Vector3& other) const
+    {
+        return Vector3(x - other.x, y - other.y, z - other.z);
+    }
+	static Vector3 subtract(Vector3 a, Vector3 b)
+	{
+		Vector3 difference = a - b;
+		return difference;
+	}
+
+	/**
+	 * Task 7: multiply() static member function
+	 */
+	static Vector3 multiply(Vector3 vec, float scalarVal)
+	{
+		Vector3 result = Vector3(vec.x * scalarVal, vec.y * scalarVal, vec.z * scalarVal);
+		return result;
+	}
+	
+	/**
+	 * Task 8: dot() static member function
+	 */
+	static float dot(Vector3 a, Vector3 b)
+	{
+		float dotProd = (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+		return dotProd;
+	}
+	
+	/**
+	 * Task 9: cross() static member function
+	 */
+	static Vector3 cross(Vector3 a, Vector3 b)
+	{
+		Vector3 crossProd = Vector3((a.y * b.z)-(a.z * b.y), (a.z * b.x)-(a.x * b.z), (a.x * b.y)-(a.y * b.x));
+		return crossProd;
+	}
+	
+	/**
+	 * Task 10: project() static member function
+	 */
+	static Vector3 project(Vector3 a, Vector3 b)
+	{
+		float dotProd = dot(a, b);
+		float bSqMag = b.squaredMagnitude();
+		
+		Vector3 proj = Vector3((dotProd/bSqMag) * b.x, (dotProd/bSqMag) * b.y, (dotProd/bSqMag) * b.z);
+		return proj;
+	}
+
+	/**
+	 * Task 11: reflect() static member function
+	 */
+	static Vector3 reflect(Vector3 a, Vector3 b)
+	{
+		Vector3 ref = a - multiply(project(a, b), 2);
+		return ref;
+	}
+	
+	friend std::ostream& operator<<(std::ostream& os, const Vector3& vec3)
+	{
+		os << "(" << vec3.x << ", " << vec3.y << ", " << vec3.z << ")";
+		return os;
+	}
+
 };
 
 /**
@@ -121,8 +250,10 @@ struct Quaternion
 	static Quaternion add(const Quaternion& a, const Quaternion& b)
 	{
 		// TODO: Task 3
-		Quaternion ret;
-		return ret;
+		float scalar = a.s + b.s;
+		Vector3 vec = a.v + b.v;
+		Quaternion sum = Quaternion(scalar, vec);
+		return sum;
 	}
 
 	/**
@@ -131,8 +262,10 @@ struct Quaternion
 	static Quaternion subtract(const Quaternion& a, const Quaternion& b)
 	{
 		// TODO: Task 4
-		Quaternion ret;
-		return ret;
+		float scalar = a.s - b.s;
+		Vector3 vec = a.v - b.v;
+		Quaternion diff = Quaternion(scalar, vec);
+		return diff;
 	}
 
 	/**
@@ -141,8 +274,10 @@ struct Quaternion
 	static Quaternion multiply(const Quaternion& q, float s)
 	{
 		// TODO: Task 5
-		Quaternion ret;
-		return ret;
+		float scalar = q.s * s;
+		Vector3 vec = Vector3::multiply(q.v, s);
+		Quaternion prod = Quaternion(scalar, vec);
+		return prod;
 	}
 
 	/**
@@ -151,8 +286,10 @@ struct Quaternion
 	static Quaternion multiply(const Quaternion& a, const Quaternion& b)
 	{
 		// TODO: Task 6
-		Quaternion ret;
-		return ret;
+		float scalar = (a.s * b.s) - Vector3::dot(a.v, b.v);
+		Vector3 vec = Vector3::multiply(b.v, a.s) + Vector3::multiply(a.v, b.s) + Vector3::cross(a.v, b.v);
+		Quaternion prod = Quaternion(scalar, vec);
+		return prod;
 	}
 
 	/**
@@ -161,8 +298,8 @@ struct Quaternion
 	Quaternion negative()
 	{
 		// TODO: Task 7
-		Quaternion ret;
-		return ret;
+		Quaternion negQ = Quaternion(-s, -v);
+		return negQ;
 	}
 
 	/**
@@ -171,8 +308,8 @@ struct Quaternion
 	Quaternion conjugate()
 	{
 		// TODO: Task 8
-		Quaternion ret;
-		return ret;
+		Quaternion conj = Quaternion(s, -v);
+		return conj;
 	}
 
 	/**
@@ -181,7 +318,8 @@ struct Quaternion
 	float squaredMagnitude()
 	{
 		// TODO: Task 9
-		return 0.0f;
+		float sqMag = (s * s) + Vector3::dot(v, v);
+		return sqMag;
 	}
 
 	/**
@@ -190,7 +328,8 @@ struct Quaternion
 	float magnitude()
 	{
 		// TODO: Task 10
-		return 0.0f;
+		float mag = sqrt(squaredMagnitude());
+		return mag;
 	}
 
 	/**
@@ -198,8 +337,13 @@ struct Quaternion
 	 */
 	Quaternion normalized()
 	{
-		// TODO: Task 11
+		float mag = magnitude();
 		Quaternion ret;
+		if (mag > 0) {
+			ret = Quaternion(1, v.x/mag, v.y/mag, v.z/mag);
+		} else {
+			ret = Quaternion(0, 0, 0, 0);
+		}
 		return ret;
 	}
 
@@ -208,18 +352,25 @@ struct Quaternion
 	 */
 	Quaternion inverse()
 	{
-		// TODO: Task 12
+		Quaternion conj = conjugate();
+		float sqMag = squaredMagnitude();
 		Quaternion ret;
+		if (sqMag > 0) {
+			ret = Quaternion(conj.s/sqMag, conj.v.x/sqMag, conj.v.y/sqMag, conj.v.z/sqMag);
+		} else {
+			ret = Quaternion(0, 0, 0, 0);
+		}
 		return ret;
 	}
 
 	/**
 	 * Returns the dot product between two quaternions (a dot b)
 	 */
-	static float dot(const Quaternion& a, const Quaternion& b)
+	static float dot(Quaternion& a, Quaternion& b)
 	{
 		// TODO: Task 13
-		return 0.0f;
+		float ret = a.s*b.s + Vector3::dot(a.v, b.v);
+		return ret;
 	}
 
 	/**
