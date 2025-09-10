@@ -178,12 +178,6 @@ public:
 int main()
 {
 	/**
-	 * This line is to test whether you can compile and run this cpp file.
-	 * Remove this line when submitting.
-	 */
-	// std::cout << "Hello World!" << std::endl;
-	
-	/**
 	 * Task 12: Read input from standard input, and output
 	 * to standard output based on the sample output.
 	 */
