@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+ #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #define _USE_MATH_DEFINES
@@ -394,7 +394,10 @@ struct Quaternion
 Vector3 rotateVector(const Vector3& v, const Vector3& rotationAxis, float angleInDegrees)
 {
 	// TODO: Task 14
-	return v;
+	Quaternion q = Quaternion(cos(angleInDegrees * M_PI / 180), Vector3::multiply(v, sin(angleInDegrees * M_PI /180))); 
+	Quaternion qv = Quaternion::multiply(q, Quaternion(0.0f, v));
+	Quaternion qvq = Quaternion::multiply(qv, q.inverse());
+	return qvq.v;
 }
 
 /**
