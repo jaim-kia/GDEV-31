@@ -398,16 +398,10 @@ Vector3 rotateVector(const Vector3& v, const Vector3& rotationAxis, float angleI
     Vector3 axis = rotationAxis;
 	axis = axis.normalized();
 
-	Quaternion q(
-        cos(angleRad / 2.0f),
-        Vector3::multiply(axis, sin(angleRad / 2.0f))
-    );
-	Quaternion vQuat(0.0f, v);
+	Quaternion q = Quaternion(cos(angleRad / 2.0f), Vector3::multiply(axis, sin(angleRad / 2.0f)));
+	Quaternion vQuat = Quaternion(0.0f, v);
 
-	Quaternion rotated = Quaternion::multiply(
-        Quaternion::multiply(q, vQuat),
-        q.inverse()
-    );
+	Quaternion rotated = Quaternion::multiply(Quaternion::multiply(q, vQuat), q.inverse());
 
     return rotated.v;
 }
