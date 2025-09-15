@@ -340,7 +340,7 @@ struct Quaternion
 		float mag = magnitude();
 		Quaternion ret;
 		if (mag > 0) {
-			ret = Quaternion(1, v.x/mag, v.y/mag, v.z/mag);
+			ret = Quaternion(s/mag, v.x/mag, v.y/mag, v.z/mag);
 		} else {
 			ret = Quaternion(0, 0, 0, 0);
 		}
@@ -394,10 +394,27 @@ struct Quaternion
 Vector3 rotateVector(const Vector3& v, const Vector3& rotationAxis, float angleInDegrees)
 {
 	// TODO: Task 14
-	Quaternion q = Quaternion(cos(angleInDegrees * M_PI / 180), Vector3::multiply(v, sin(angleInDegrees * M_PI /180))); 
-	Quaternion qv = Quaternion::multiply(q, Quaternion(0.0f, v));
-	Quaternion qvq = Quaternion::multiply(qv, q.inverse());
-	return qvq.v;
+
+	float angleRad = angleInDegrees * M_PI / 180.0f;
+    Vector3 axis = rotationAxis;
+	axis = axis.normalized();
+
+	Quaternion q(
+        cos(angleRad / 2.0f),
+        Vector3::multiply(axis, sin(angleRad / 2.0f))
+    );
+	Quaternion vQuat(0.0f, v);
+
+	Quaternion rotated = Quaternion::multiply(
+        Quaternion::multiply(q, vQuat),
+        q.inverse()
+    );
+
+    return rotated.v;
+	// Quaternion q = Quaternion(cos(angleInDegrees * M_PI / 180), Vector3::multiply(v, sin(angleInDegrees * M_PI /180))); 
+	// Quaternion qv = Quaternion::multiply(q, Quaternion(0.0f, v));
+	// Quaternion qvq = Quaternion::multiply(qv, q.inverse());
+	// return qvq.v;
 }
 
 /**
