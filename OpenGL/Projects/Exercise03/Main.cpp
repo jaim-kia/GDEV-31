@@ -74,9 +74,16 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 
 	// if farthest point < epsilon, delete everything
 
-	if (*max_dist < epsilon)
+	std::vector<Point> mergedPolyPoints;
+	if (polyPoints.size() <= 2)
 	{
-		std::vector<Point> polyPoints = {firstElement, lastElement};
+		mergedPolyPoints = {firstElement, lastElement};
+		std::cout << "END" << std::endl;
+		std::cout << polyPoints.size() << std::endl;
+	}
+	else if (*max_dist < epsilon)
+	{
+		mergedPolyPoints = {firstElement, lastElement};
 	}
 	else 
 	{
@@ -103,21 +110,16 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 		// exit recursion break the chains in the sunset
 		// https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
 		std::vector<Point> mergedPoly;
-		mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size());
-		mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		std::vector<Point> polyPoints = mergedPoly;
+		mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size() - 1);
+		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
+		mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_firstHalf.end());
+		mergedPoly.insert(mergedPoly.end(), RDP_secondHalf.begin() + 1, RDP_secondHalf.end());
+
+		mergedPolyPoints = mergedPoly;
 		std::cout << "MERGE" << std::endl;
 	}
-
-	// if (polyPoints.size() <= 2)
-	// {
-	// 	// std::vector<Point> polyPoints = {firstElement, lastElement};
-	// 	std::cout << "END" << std::endl;
-	// 	std::cout << polyPoints.size() << std::endl;
-	// }
 	
-	return polyPoints;
+	return mergedPolyPoints;
 }
 
 // ----------------------------------------------------------------------------------
