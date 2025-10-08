@@ -27,6 +27,15 @@ bool operator==(const Point& p1, const Point& p2)
 	return (p1.x == p2.x && p1.y == p2.y);
 }
 
+void printPointList(const std::vector<Point>& polyPoints) {
+	std::cout << std::endl;
+	std::cout << "PRINTING POLYPOINTS\n";
+	for (Point p : polyPoints) {
+		std::cout << "(" << p.x << ", " << p.y << ")\n";
+	}
+	std::cout << std::endl;
+}
+
 /**
  * @brief Simplifies the provided polyline using the Ramer-Douglas-Peucker algorithm.
  * @param polylinePoints Vector containing the points of the polyline
@@ -77,46 +86,59 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 	std::vector<Point> mergedPolyPoints;
 	if (polyPoints.size() <= 2)
 	{
-		mergedPolyPoints = {firstElement, lastElement};
-		std::cout << "END" << std::endl;
-		std::cout << polyPoints.size() << std::endl;
+		// BASE CASE
+		return mergedPolyPoints;
+		//  = {firstElement, lastElement};
+		// std::cout << "END" << std::endl;
+		// std::cout << polyPoints.size() << std::endl;
 	}
-	else if (*max_dist < epsilon)
+	else if (*max_dist <= epsilon)
 	{
-		mergedPolyPoints = {firstElement, lastElement};
+		// mergedPolyPoints = {firstElement, lastElement};
+		return mergedPolyPoints;
 	}
 	else 
 	{
+		// std::cout << "it went in";
 		// get index of max_dist
 		auto max_point_it = std::find(polyDistance.begin(), polyDistance.end(), *max_dist);
 		int max_index = max_point_it - polyDistance.begin();
-		Point max_point = polyPoints.at(max_index);
+		// Point max_point = polyPoints.at(max_index);
 
-		// vector
+		// // vector
 		std::vector<Point> polyAnchorPoints;
-		polyAnchorPoints.resize(max_index + 1);
-		std::copy(polyPoints.begin(), polyPoints.begin() + max_index, polyAnchorPoints.begin());
+		// polyAnchorPoints.resize(max_index + 1);
+		std::copy(polyPoints.begin(), polyPoints.begin() + max_index + 1, back_inserter(polyAnchorPoints));
 		std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
-		std::cout << "ANCHOR" << std::endl;
+		printPointList(polyAnchorPoints);
 
-		// vector
+		// // vector
 		std::vector<Point> polyFloatingPoints;
-		polyFloatingPoints.resize(polyPoints.size() - max_index);
-		std::copy(polyPoints.begin() + max_index, polyPoints.end(), polyFloatingPoints.begin());
+		// polyFloatingPoints.resize(polyPoints.size() - max_index);
+		std::copy(polyPoints.begin() + max_index + 1, polyPoints.end(), back_inserter(polyFloatingPoints));
 		std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
-		std::cout << "FLOAT" << std::endl;
+		printPointList(polyFloatingPoints);
+		// std::cout << "FLOAT" << std::endl;
 
-		// merge and pushback two vectors to polyPoints 
-		// exit recursion break the chains in the sunset
-		// https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
+		// // merge and pushback two vectors to polyPoints 
+		// // exit recursion break the chains in the sunset
+		// // https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
 		std::vector<Point> mergedPoly;
-		mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size() - 1);
-		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_firstHalf.end());
-		mergedPoly.insert(mergedPoly.end(), RDP_secondHalf.begin() + 1, RDP_secondHalf.end());
+		for (Point p : polyAnchorPoints)
+		{
+			mergedPoly.push_back(p);
+		}
+		for (int i = 1; i < polyFloatingPoints.size(); i++)
+		{
+			mergedPoly.push_back(polyFloatingPoints[i]);
+		}
+		// mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size() - 1);
+		// // mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
+		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_firstHalf.end());
+		// mergedPoly.insert(mergedPoly.end(), RDP_secondHalf.begin() + 1, RDP_secondHalf.end());
 
+		// mergedPolyPoints = polyAnchorPoints;
 		mergedPolyPoints = mergedPoly;
-		std::cout << "MERGE" << std::endl;
 	}
 	
 	return mergedPolyPoints;
