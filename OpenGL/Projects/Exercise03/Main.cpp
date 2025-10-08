@@ -92,74 +92,84 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 
 	// if farthest point < epsilon, delete everything
 
-	if (max_dist <= epsilon)
+	if (polyPoints.size() <= 2)
 	{
-		std::cout << "BASE CASE TRIGGERED\n";
-		polyPoints.clear();
+		// BASE CASE
+		std::cout << "BASE CASE TRIGGEREDD" << std::endl;
 		polyPoints = {firstElement, lastElement};
 	}
-	else 
+	else
 	{
-		// continuation of find maximum distance point
-		Point max_point = polyPoints[max_index]; 
-		// std::cout << "max index: " << max_index+1 << std::endl;
-		std::cout << "MAX POINT: (" << max_point.x << ", " << max_point.y << ")\n";
+		if (max_dist <= epsilon)
+			{
+				std::cout << "LESS THAN EPSILON\n";
+				polyPoints.clear();
+				polyPoints = {firstElement, lastElement};
+			}
+			else 
+			{
+				// continuation of find maximum distance point
+				Point max_point = polyPoints[max_index]; 
+				// std::cout << "max index: " << max_index+1 << std::endl;
+				std::cout << "MAX POINT: (" << max_point.x << ", " << max_point.y << ")\n";
 
-		// // vector
-		// std::vector<Point> polyAnchorPoints;
-		// polyAnchorPoints.resize(max_index + 1);
-		// std::copy(polyPoints.begin(), polyPoints.begin() + max_index, polyAnchorPoints.begin());
-		// std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
-		// std::cout << "ANCHOR" << std::endl;
+				// // vector
+				// std::vector<Point> polyAnchorPoints;
+				// polyAnchorPoints.resize(max_index + 1);
+				// std::copy(polyPoints.begin(), polyPoints.begin() + max_index, polyAnchorPoints.begin());
+				// std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
+				// std::cout << "ANCHOR" << std::endl;
 
-		// // vector
-		// std::vector<Point> polyFloatingPoints;
-		// polyFloatingPoints.resize(polyPoints.size() - max_index);
-		// std::copy(polyPoints.begin() + max_index, polyPoints.end(), polyFloatingPoints.begin());
-		// std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
-		// std::cout << "FLOAT" << std::endl;
+				// // vector
+				// std::vector<Point> polyFloatingPoints;
+				// polyFloatingPoints.resize(polyPoints.size() - max_index);
+				// std::copy(polyPoints.begin() + max_index, polyPoints.end(), polyFloatingPoints.begin());
+				// std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
+				// std::cout << "FLOAT" << std::endl;
 
-		// // merge and pushback two vectors to polyPoints 
-		// // exit recursion break the chains in the sunset
-		// // https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
-		// std::vector<Point> mergedPoly;
-		// mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size());
-		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		// std::vector<Point> polyPoints = mergedPoly;
-		// std::cout << "MERGE" << std::endl;
+				// // merge and pushback two vectors to polyPoints 
+				// // exit recursion break the chains in the sunset
+				// // https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
+				// std::vector<Point> mergedPoly;
+				// mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size());
+				// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
+				// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
+				// std::vector<Point> polyPoints = mergedPoly;
+				// std::cout << "MERGE" << std::endl;
 
-		// from anchor to max point
-		std::vector<Point> firstHalf;
-		firstHalf.resize(std::distance(polyPoints.begin(), polyPoints.begin()+max_index));
-		std::copy(polyPoints.begin(), polyPoints.begin()+max_index, firstHalf.begin());
-		std::cout << "FIRST HALF POINTS\n";
-		printPointList(firstHalf);
+				// from anchor to max point
+				std::vector<Point> firstHalf;
+				firstHalf.resize(std::distance(polyPoints.begin(), polyPoints.begin()+max_index));
+				std::copy(polyPoints.begin(), polyPoints.begin()+max_index, firstHalf.begin());
+				std::cout << "FIRST HALF POINTS\n";
+				printPointList(firstHalf);
 
-		// from max point to floating
-		std::vector<Point> secondHalf;
-		secondHalf.resize(std::distance(polyPoints.begin()+max_index-1, polyPoints.end()));
-		std::copy(polyPoints.begin()+max_index-1, polyPoints.end(), secondHalf.begin());
-		std::cout << "SECOND HALF POINTS\n";
-		printPointList(secondHalf);
-		
+				// from max point to floating
+				std::vector<Point> secondHalf;
+				secondHalf.resize(std::distance(polyPoints.begin()+max_index-1, polyPoints.end()));
+				std::copy(polyPoints.begin()+max_index-1, polyPoints.end(), secondHalf.begin());
+				std::cout << "SECOND HALF POINTS\n";
+				printPointList(secondHalf);
+				
 
-		// recursion time
-		RamerDouglasPeucker(firstHalf, epsilon);
-		std::cout << "FIRST RECURSSION COMPLETE\n";
-		RamerDouglasPeucker(secondHalf, epsilon);
-		std::cout << "SECOND RECURSSION COMPLETE\n";
+				// recursion time
+				RamerDouglasPeucker(firstHalf, epsilon);
+				std::cout << "FIRST RECURSSION COMPLETE\n";
+				RamerDouglasPeucker(secondHalf, epsilon);
+				std::cout << "SECOND RECURSSION COMPLETE\n";
 
-		// merge the two halves
-		std::vector<Point> mergedPoly;
-		mergedPoly.reserve(firstHalf.size() + secondHalf.size() - 1);
-		mergedPoly.insert(mergedPoly.end(), firstHalf.begin()+1, secondHalf.end());
-		mergedPoly.insert(mergedPoly.end(), firstHalf.begin()+1, secondHalf.end());
+				// merge the two halves
+				std::vector<Point> mergedPoly;
+				mergedPoly.reserve(firstHalf.size() + secondHalf.size() - 1);
+				mergedPoly.insert(mergedPoly.end(), firstHalf.begin()+1, secondHalf.end());
+				mergedPoly.insert(mergedPoly.end(), firstHalf.begin()+1, secondHalf.end());
 
-		polyPoints.clear();
-		polyPoints = mergedPoly;
-		std::cout << "MERGE" << std::endl;
+				polyPoints.clear();
+				polyPoints = mergedPoly;
+				std::cout << "MERGE" << std::endl;
+			}
 	}
+	
 
 	// if (polyPoints.size() <= 2)
 	// {
