@@ -22,20 +22,6 @@ struct Point {
 	float y;
 };
 
-bool operator==(const Point& p1, const Point& p2)
-{
-	return (p1.x == p2.x && p1.y == p2.y);
-}
-
-void printPointList(const std::vector<Point>& polyPoints) {
-	std::cout << std::endl;
-	std::cout << "PRINTING POLYPOINTS\n";
-	for (Point p : polyPoints) {
-		std::cout << "(" << p.x << ", " << p.y << ")\n";
-	}
-	std::cout << std::endl;
-}
-
 /**
  * @brief Simplifies the provided polyline using the Ramer-Douglas-Peucker algorithm.
  * @param polylinePoints Vector containing the points of the polyline
@@ -43,105 +29,60 @@ void printPointList(const std::vector<Point>& polyPoints) {
  * @return Returns a vector containing the points of the simplified polyline 
  */
 std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints, float epsilon) {
-	// TODO: Implement
-	std::vector<Point> polyPoints = polylinePoints;
 
-	// contain first and last point
-	Point firstElement = polyPoints.front();
-	Point lastElement = polyPoints.back();
-	
-	// get the line between first and last elem 
-	float slope = (lastElement.y - firstElement.y) / (lastElement.x - firstElement.x);
-	float y_int = lastElement.y - (slope * lastElement.x);
+	// base case
+	if (polylinePoints.size() <= 2) {
+        return polylinePoints;
+    }
+    
+	// store first and last points
+    const Point& firstPoint = polylinePoints.front();
+    const Point& lastPoint = polylinePoints.back();
+    
+    float maxDistance = 0.0f;
+    size_t maxIndex = 0;
+    
+	// using two-point form, derive A, B, and C in implicit for
+    float A = lastPoint.y - firstPoint.y;
+    float B = firstPoint.x - lastPoint.x;
+    float C = lastPoint.x * firstPoint.y - firstPoint.x * lastPoint.y;
 
-	float a_imp = -slope;
-	float b_imp = 1;
-	float c_imp = -y_int;
-	
-	// find slope - done
-	// point-slope form: y - y1 = m(x - x1) ; y1 and x1 must be the existing points
-	// convert to y = mx + b
-	// convert to implicit by moving all points to one side, leaving the other side to be 0
+	// precompute the denominator for perpendicular distance because it is the same in all indices
+    float denominator = sqrt(A * A + B * B);
+    
+	// per polyline point compute the numerator then perpendicular distance
+    for (size_t i = 1; i < polylinePoints.size() - 1; i++) {
+        const Point& currentPoint = polylinePoints[i];
+        float numerator = fabs(A * currentPoint.x + B * currentPoint.y + C);
+        float distance = numerator / denominator;
+        
+		// compare with the current max distance and overwrite if the most recent distance is the highest
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            maxIndex = i;
+        }
+    }
+    
+	// if the max distance is greater than epsilon we slice the polyline into two subsections and do the algorithm recursively
+    if (maxDistance > epsilon) {
+		// from 'anchor point' to the 'max-distance point'
+        std::vector<Point> firstSegment(polylinePoints.begin(), polylinePoints.begin() + maxIndex + 1);
+        std::vector<Point> simplifiedFirst = RamerDouglasPeucker(firstSegment, epsilon);
 
-	// all inside points get shortest/perpendicular distance from the line
-	std::vector<float> polyDistance;
-	for (Point p : polyPoints)
-	{
-		if (p == firstElement || p == lastElement)
-		{
-			continue;
-		}
-		else
-		{
-			float numerator = abs(a_imp*p.x + b_imp*p.y + c_imp);
-			float denominator = sqrt(a_imp*a_imp + b_imp*b_imp);
-			polyDistance.push_back(numerator/denominator);
-		}
-	}
-	// get the farthest point
-	auto max_dist = std::max_element(polyDistance.begin(), polyDistance.end());
-
-	// if farthest point < epsilon, delete everything
-
-	std::vector<Point> mergedPolyPoints;
-	if (polyPoints.size() <= 2)
-	{
-		// BASE CASE
-		return mergedPolyPoints;
-		//  = {firstElement, lastElement};
-		// std::cout << "END" << std::endl;
-		// std::cout << polyPoints.size() << std::endl;
-	}
-	else if (*max_dist <= epsilon)
-	{
-		// mergedPolyPoints = {firstElement, lastElement};
-		return mergedPolyPoints;
-	}
-	else 
-	{
-		// std::cout << "it went in";
-		// get index of max_dist
-		auto max_point_it = std::find(polyDistance.begin(), polyDistance.end(), *max_dist);
-		int max_index = max_point_it - polyDistance.begin();
-		// Point max_point = polyPoints.at(max_index);
-
-		// // vector
-		std::vector<Point> polyAnchorPoints;
-		// polyAnchorPoints.resize(max_index + 1);
-		std::copy(polyPoints.begin(), polyPoints.begin() + max_index + 1, back_inserter(polyAnchorPoints));
-		std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
-		printPointList(polyAnchorPoints);
-
-		// // vector
-		std::vector<Point> polyFloatingPoints;
-		// polyFloatingPoints.resize(polyPoints.size() - max_index);
-		std::copy(polyPoints.begin() + max_index + 1, polyPoints.end(), back_inserter(polyFloatingPoints));
-		std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
-		printPointList(polyFloatingPoints);
-		// std::cout << "FLOAT" << std::endl;
-
-		// // merge and pushback two vectors to polyPoints 
-		// // exit recursion break the chains in the sunset
-		// // https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
-		std::vector<Point> mergedPoly;
-		for (Point p : polyAnchorPoints)
-		{
-			mergedPoly.push_back(p);
-		}
-		for (int i = 1; i < polyFloatingPoints.size(); i++)
-		{
-			mergedPoly.push_back(polyFloatingPoints[i]);
-		}
-		// mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size() - 1);
-		// // mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_firstHalf.end());
-		// mergedPoly.insert(mergedPoly.end(), RDP_secondHalf.begin() + 1, RDP_secondHalf.end());
-
-		// mergedPolyPoints = polyAnchorPoints;
-		mergedPolyPoints = mergedPoly;
-	}
-	
-	return mergedPolyPoints;
+		// from 'max-distance point' to the 'floating point'
+		std::vector<Point> secondSegment(polylinePoints.begin() + maxIndex, polylinePoints.end());
+        std::vector<Point> simplifiedSecond = RamerDouglasPeucker(secondSegment, epsilon);
+        
+		// merge polyline using insert()
+        std::vector<Point> mergedPoly;
+        mergedPoly.insert(mergedPoly.end(), simplifiedFirst.begin(), simplifiedFirst.end());
+        mergedPoly.insert(mergedPoly.end(), simplifiedSecond.begin() + 1, simplifiedSecond.end());
+        
+        return mergedPoly;
+    } else {
+		// if less than or equal to, just return the two points
+        return std::vector<Point>{firstPoint, lastPoint};
+    }
 }
 
 // ----------------------------------------------------------------------------------
