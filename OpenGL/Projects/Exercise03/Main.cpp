@@ -36,6 +36,28 @@ void printPointList(const std::vector<Point>& polyPoints) {
 	std::cout << std::endl;
 }
 
+float perpDistance(const Point &p, const Point &firstElement, const Point &lastElement) {
+	// get the line between first and last elem 
+	// float slope = (lastElement.y - firstElement.y) / (lastElement.x - firstElement.x);
+	// float y_int = lastElement.y - (slope * lastElement.x);
+
+	// float a_imp = -slope;
+	// float b_imp = 1;
+	// float c_imp = -y_int;
+
+	float a_imp = lastElement.y - firstElement.y;
+	float b_imp = -(lastElement.x - firstElement.x);
+	float c_imp = (lastElement.x * firstElement.y) - (lastElement.y * firstElement.x); 
+
+	float numerator = abs(a_imp*p.x + b_imp*p.y + c_imp);
+	float denominator = sqrt(a_imp*a_imp + b_imp*b_imp);
+
+	float answer = numerator/denominator;
+
+	return answer;
+}
+
+
 /**
  * @brief Simplifies the provided polyline using the Ramer-Douglas-Peucker algorithm.
  * @param polylinePoints Vector containing the points of the polyline
@@ -50,97 +72,88 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 	Point firstElement = polyPoints.front();
 	Point lastElement = polyPoints.back();
 	
-	// get the line between first and last elem 
-	float slope = (lastElement.y - firstElement.y) / (lastElement.x - firstElement.x);
-	float y_int = lastElement.y - (slope * lastElement.x);
-
-	float a_imp = -slope;
-	float b_imp = 1;
-	float c_imp = -y_int;
-	
-	// find slope - done
-	// point-slope form: y - y1 = m(x - x1) ; y1 and x1 must be the existing points
-	// convert to y = mx + b
-	// convert to implicit by moving all points to one side, leaving the other side to be 0
-
-	// all inside points get shortest/perpendicular distance from the line
-	std::vector<float> polyDistance;
-	for (Point p : polyPoints)
-	{
-		if (p == firstElement || p == lastElement)
-		{
-			continue;
-		}
-		else
-		{
-			float numerator = abs(a_imp*p.x + b_imp*p.y + c_imp);
-			float denominator = sqrt(a_imp*a_imp + b_imp*b_imp);
-			polyDistance.push_back(numerator/denominator);
+	// find point with the maximum distance and take note of its index in polyPoints
+	// i = 1 to skip first point; size-1 to skip last point
+	int max_index = 0;
+	float max_dist = 0;
+	for (int i = 1; i < polyPoints.size()-1; i++) {
+		float perpDist = perpDistance(polyPoints[i], firstElement, lastElement);
+		if (perpDist > max_dist) {
+			max_index = i;
+			max_dist = perpDist;
 		}
 	}
-	// get the farthest point
-	auto max_dist = std::max_element(polyDistance.begin(), polyDistance.end());
+
+	// std::cout << "YEAH YEAH\n";
+	// printPointList(polyPoints);
 
 	// if farthest point < epsilon, delete everything
 
 	std::vector<Point> mergedPolyPoints;
-	if (polyPoints.size() <= 2)
-	{
-		// BASE CASE
-		return mergedPolyPoints;
-		//  = {firstElement, lastElement};
-		// std::cout << "END" << std::endl;
-		// std::cout << polyPoints.size() << std::endl;
-	}
-	else if (*max_dist <= epsilon)
+	// if (polyPoints.size() < 2)
+	// {
+	// 	// BASE CASE
+	// 	std::cout << "Not enough points????\n";
+	// 	mergedPolyPoints = polyPoints;
+	// 	// printPointList(mergedPolyPoints);
+	// 	return mergedPolyPoints;
+	// 	//  = {firstElement, lastElement};
+	// 	// std::cout << "END" << std::endl;
+	// 	// std::cout << polyPoints.size() << std::endl;
+	// }
+	if (max_dist <= epsilon || polyPoints.size() <= 2)
 	{
 		// mergedPolyPoints = {firstElement, lastElement};
+		std::cout << "wallahi ur distance is too small\n";
+		mergedPolyPoints = {firstElement, lastElement};
+		// printPointList(mergedPolyPoints);
 		return mergedPolyPoints;
 	}
 	else 
 	{
 		// std::cout << "it went in";
 		// get index of max_dist
-		auto max_point_it = std::find(polyDistance.begin(), polyDistance.end(), *max_dist);
-		int max_index = max_point_it - polyDistance.begin();
-		// Point max_point = polyPoints.at(max_index);
+		// auto max_point_it = std::find(polyDistance.begin(), polyDistance.end(), max_dist);
+		// int max_index = max_point_it - polyDistance.begin() + 1; // add one to skip the anchor point that's also in polyPoints
+		Point max_point = polyPoints[max_index];
 
+		std::cout << "MAX POINT: (" << max_point.x << ", " << max_point.y << ")\n";
+		std::cout << "MAX DIST: " << max_dist << std::endl;
 		// // vector
 		std::vector<Point> polyAnchorPoints;
 		// polyAnchorPoints.resize(max_index + 1);
 		std::copy(polyPoints.begin(), polyPoints.begin() + max_index + 1, back_inserter(polyAnchorPoints));
-		std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
-		printPointList(polyAnchorPoints);
+		// std::cout << "POLY ANCHOR POINTS:\n";
+		// printPointList(polyAnchorPoints);
 
 		// // vector
 		std::vector<Point> polyFloatingPoints;
 		// polyFloatingPoints.resize(polyPoints.size() - max_index);
-		std::copy(polyPoints.begin() + max_index + 1, polyPoints.end(), back_inserter(polyFloatingPoints));
-		std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
-		printPointList(polyFloatingPoints);
+		std::copy(polyPoints.begin() + max_index, polyPoints.end(), back_inserter(polyFloatingPoints));
+		// std::cout << "POLY FLOATING POINTS:\n";
+		// printPointList(polyFloatingPoints);
 		// std::cout << "FLOAT" << std::endl;
+
+		// recursion time
+		std::vector<Point> RDP_firstHalf = RamerDouglasPeucker(polyAnchorPoints, epsilon);
+		std::vector<Point> RDP_secondHalf = RamerDouglasPeucker(polyFloatingPoints, epsilon);
 
 		// // merge and pushback two vectors to polyPoints 
 		// // exit recursion break the chains in the sunset
 		// // https://stackoverflow.com/questions/3177241/what-is-the-best-way-to-concatenate-two-vectors
-		std::vector<Point> mergedPoly;
-		for (Point p : polyAnchorPoints)
+		// std::vector<Point> mergedPoly;
+		for (Point p : RDP_firstHalf)
 		{
-			mergedPoly.push_back(p);
+			mergedPolyPoints.push_back(p);
 		}
-		for (int i = 1; i < polyFloatingPoints.size(); i++)
+		for (int i = 1; i < RDP_secondHalf.size(); i++)
 		{
-			mergedPoly.push_back(polyFloatingPoints[i]);
+			mergedPolyPoints.push_back(polyFloatingPoints[i]);
 		}
-		// mergedPoly.reserve(RDP_firstHalf.size() + RDP_secondHalf.size() - 1);
-		// // mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_secondHalf.end());
-		// mergedPoly.insert(mergedPoly.end(), RDP_firstHalf.begin(), RDP_firstHalf.end());
-		// mergedPoly.insert(mergedPoly.end(), RDP_secondHalf.begin() + 1, RDP_secondHalf.end());
-
-		// mergedPolyPoints = polyAnchorPoints;
-		mergedPolyPoints = mergedPoly;
+		
 	}
-	
+	std::cout << "MERGED POLYPOINTS\n";
+	printPointList(mergedPolyPoints);
 	return mergedPolyPoints;
 }
 
