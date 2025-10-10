@@ -50,11 +50,15 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
 	// precompute the denominator for perpendicular distance because it is the same in all indices
     float denominator = sqrt(A * A + B * B);
     
+	// store distances of subpoints for printing if they get removed
+    std::vector<float> polyDistances;
+
 	// per polyline point compute the numerator then perpendicular distance
     for (size_t i = 1; i < polylinePoints.size() - 1; i++) {
         const Point& currentPoint = polylinePoints[i];
         float numerator = fabs(A * currentPoint.x + B * currentPoint.y + C);
         float distance = numerator / denominator;
+        polyDistances.push_back(distance);
         
 		// compare with the current max distance and overwrite if the most recent distance is the highest
         if (distance > maxDistance) {
@@ -81,6 +85,20 @@ std::vector<Point> RamerDouglasPeucker(const std::vector<Point>& polylinePoints,
         return mergedPoly;
     } else {
 		// if less than or equal to, just return the two points
+		// print the removed poitns and why
+        std::cout << "subsection endpoints: (" << firstPoint.x << ", " << firstPoint.y << ") to (" << lastPoint.x << ", " << lastPoint.y << ")" << std::endl;
+		std::cout << "points removed from subsection:" << std::endl;
+        std::cout << "removed " << (polylinePoints.size() - 2) << " points:" << std::endl;
+        
+        for (size_t i = 1; i < polylinePoints.size() - 1; i++) {
+            float distance = polyDistances[i-1];
+            std::cout << "  point (" << polylinePoints[i].x << ", " << polylinePoints[i].y << ") - distance: " << distance;
+            if (distance <= epsilon) {
+                std::cout << " is within epsilon" << std::endl;
+            }
+        }
+        std::cout << "since max distance: " << maxDistance << " at index " << maxIndex << " is within epsilon, remove all points in the subsection except endpoints" << std::endl << std::endl;
+
         return std::vector<Point>{firstPoint, lastPoint};
     }
 }
@@ -219,23 +237,33 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	if ((action == GLFW_PRESS) && (key == GLFW_KEY_SPACE)) {
 		appData->polyline.clear();
 		GenerateRandomPolyline(appData->polyline);
+		std::cout << "[-----------------------------------------------]" << std::endl;
+		std::cout << "Epsilon: " << appData->epsilon << std::endl;
 		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 	}
 	else if ((action == GLFW_PRESS) && (key == GLFW_KEY_LEFT)) {
 		appData->epsilon -= 1.0f;
 		appData->epsilon = (appData->epsilon < 0.0f) ? 0.0f : appData->epsilon;
-		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 		std::cout << "Epsilon: " << appData->epsilon << std::endl;
+		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 	}
 	else if ((action == GLFW_PRESS) && (key == GLFW_KEY_RIGHT)) {
 		appData->epsilon += 1.0f;
 		appData->epsilon = (appData->epsilon > 50.0f) ? 50.0f : appData->epsilon;
-		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 		std::cout << "Epsilon: " << appData->epsilon << std::endl;
+		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 	}
 	else if ((action == GLFW_PRESS) && (key == GLFW_KEY_P)) {
 		appData->bShowOriginalPolyline = !appData->bShowOriginalPolyline;
+		std::cout << "[-----------------------------------------------]" << std::endl;
+		std::cout << "Epsilon: " << appData->epsilon << std::endl;
 		RefreshScene(appData);
+		std::cout << "[-----------------------------------------------]" << std::endl;
 	}
 }
 
@@ -447,8 +475,10 @@ int main(int argc, char* argv[]) {
 	appData.vbo = vbo;
 	glfwSetWindowUserPointer(window, &appData);
 
+	std::cout << "[-----------------------------------------------]" << std::endl;
 	std::cout << "Epsilon: " << appData.epsilon << std::endl;
 	RefreshScene(&appData);
+	std::cout << "[-----------------------------------------------]" << std::endl;
 
 	Matrix4x4 projMatrix = CreateOrtho(0.0f, WINDOW_WIDTH * 1.0f, 0.0f, WINDOW_HEIGHT * 1.0f, -100.0f, 100.0f);
 	while (!glfwWindowShouldClose(window)) {
