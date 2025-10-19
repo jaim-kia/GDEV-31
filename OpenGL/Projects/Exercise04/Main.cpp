@@ -31,8 +31,8 @@ struct Point {
  * @return Returns true if the two convex shapes are overlapping. Returns false otherwise.
  */
 bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
-	// TODO: Implement
-
+	
+	
 	return false;
 }
 
