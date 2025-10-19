@@ -32,7 +32,122 @@ struct Point {
  */
 bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	// TODO: Implement
+	// step 1 find normal based on each side
+	// step 2 if two normals are pointing the same dir/negative dir, remove one (NO DUPLICATES ALLOWED)
+	// step 3 add all unique normals into a list (candidates of separate axis)
+	// step 4 project each shape onto each axis
+	// step 5 determine the min/max of both projections
+	//	min/max = farthest points from each other
+	// step 6 if projections overlap
+	// if min of shape1 is greater than the max of shape2
+	// 
 
+	std::vector<Point> normals;
+	
+	for(int i = 0; i < shapeA.size() ; i++) 
+	{
+		Point p;
+		if (i == shapeA.size()-1)
+		{
+			p = Point{shapeA[i].x - shapeA[0].x, shapeA[i].y - shapeA[0].y};
+		} else {
+			p = Point{shapeA[i].x - shapeA[i+1].x, shapeA[i].y - shapeA[i+1].y};
+		}
+
+		Point normal_p = Point{-p.y, p.x};
+		float magnitude = sqrt(p.x*p.x + p.y*p.y);
+		Point normalized_p = Point{p.x / magnitude, p.y / magnitude};
+		normals.push_back(normalized_p);
+	}
+	
+	for(int i = 0; i < shapeB.size() ; i++) 
+	{
+		Point p; 
+		if (i == shapeB.size()-1)
+		{
+			p = Point{shapeB[i].x - shapeB[0].x, shapeB[i].y - shapeB[0].y};
+		} else {
+			p = Point{shapeB[i].x - shapeB[i+1].x, shapeB[i].y - shapeB[i+1].y};
+		}
+		
+		Point normal_p = Point{-p.y, p.x};
+		float magnitude = sqrt(p.x*p.x + p.y*p.y);
+		Point normalized_p = Point{p.x / magnitude, p.y / magnitude};
+		normals.push_back(normalized_p);
+	}
+
+	for(int i = 0; i < normals.size() ; i++)
+	{
+		
+		for(int j = 1; j < normals.size() ; j++)
+		{
+			if ((normals[i].x == normals[j].x && normals[i].y == normals[j].y) ||
+				(normals[i].x == -normals[j].x && normals[i].y == -normals[j].y))
+			{
+				normals.erase(normals.begin() + i); 
+			}
+		}
+	}
+
+	// getting the axes
+	std::vector<Point> axes;
+	for(Point p : normals)
+	{
+		Point axis = Point{-p.y, p.x};
+		axes.push_back(axis);
+	}
+
+	for(Point axis : axes)
+	{
+		float squaredMagAxis = axis.x * axis.x + axis.y * axis.y;
+
+		Point currentMinA = {0,0};
+		Point currentMaxA = {0,0};
+		Point currentMinB = {0,0};
+		Point currentMaxB = {0,0};
+
+		for(Point a : shapeA)
+		{
+			float dotProdA = (a.x * axis.x) + (a.y * axis.y);
+			Point projA = Point{dotProdA/squaredMagAxis * axis.x, dotProdA/squaredMagAxis.y * axis.y};
+
+			if (p)
+			currentMinA = 
+			currentMaxA = 
+			// get the min/max
+			
+		}
+		for(Point b : shapeB)
+		{
+			float dotProdB = (b.x * axis.x) + (b.y * axis.y);
+			Point projB = Point{dotProdB/squaredMagAxis * axis.x, dotProdB/squaredMagAxis.y * axis.y};
+
+			// get the min/max
+			
+		}
+		// if compare to check overlap
+		
+	}
+	// projections
+	// float squaredMag = x * x + y * y + z * z;
+	// 	static float dot(Vector3 a, Vector3 b)
+	// {
+	// 	float dotProd = (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+	// 	return dotProd;
+	// }
+	// static Vector3 project(Vector3 a, Vector3 b)
+	// {
+	// 	float dotProd = dot(a, b);
+	// 	float bSqMag = b.squaredMagnitude();
+		
+	// 	Vector3 proj = Vector3((dotProd/bSqMag) * b.x, (dotProd/bSqMag) * b.y, (dotProd/bSqMag) * b.z);
+	// 	return proj;
+	// }
+
+	
+	// it was parenthesis with Vector bc they added () params or smth to it
+	
+	
 	return false;
 }
 
