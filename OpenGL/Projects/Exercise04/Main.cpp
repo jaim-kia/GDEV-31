@@ -115,17 +115,8 @@ struct Vector2
  * @return Returns true if the two convex shapes are overlapping. Returns false otherwise.
  */
 bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
-	// TODO: Implement
-	// step 1 find normal based on each side
-	// step 2 if two normals are pointing the same dir/negative dir, remove one (NO DUPLICATES ALLOWED)
-	// step 3 add all unique normals into a list (candidates of separate axis)
-	// step 4 project each shape onto each axis
-	// step 5 determine the min/max of both projections
-	//	min/max = farthest points from each other
-	// step 6 if projections overlap
-	// if min of shape1 is greater than the max of shape2
-	// 
 
+	// Fritz
 	std::vector<Vector2> normals;
 	
 	for(int i = 0; i < shapeA.size() ; i++) 
@@ -156,6 +147,7 @@ bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 		normals.push_back(normal_p.normalized());
 	}
 
+	// Sherrie
 	for(int i = 0; i < normals.size() ; i++)
 	{
 		for(int j = i + 1; j < normals.size(); j++)
@@ -168,14 +160,7 @@ bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 		}
 	}
 
-	// getting the axes
-	// std::vector<Vector2> axes;
-	// for(Vector2 v : normals)
-	// {
-	// 	Vector2 axis = v.perp();
-	// 	axes.push_back(axis);
-	// }
-
+	// Jaim
 	for (Vector2 axis : normals)
 	{
 		float minA = Vector2::dot(Vector2(shapeA[0].x, shapeA[0].y), axis);
