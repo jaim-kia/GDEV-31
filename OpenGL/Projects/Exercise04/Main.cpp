@@ -169,80 +169,40 @@ bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	}
 
 	// getting the axes
-	std::vector<Vector2> axes;
-	for(Vector2 v : normals)
-	{
-		Vector2 axis = v.perp();
-		axes.push_back(axis);
-	}
+	// std::vector<Vector2> axes;
+	// for(Vector2 v : normals)
+	// {
+	// 	Vector2 axis = v.perp();
+	// 	axes.push_back(axis);
+	// }
 
-	for (Vector2 axis : axes)
+	for (Vector2 axis : normals)
 	{
-		Point minA = Point();
-		Point maxA = Point();
-		Point minB = Point();
-		Point maxB = Point();
+		float minA = Vector2::dot(Vector2(shapeA[0].x, shapeA[0].y), axis);
+		float maxA = minA;
+		float minB = Vector2::dot(Vector2(shapeB[0].x, shapeB[0].y), axis);
+		float maxB = minB;
 
 		for (Point a : shapeA)
 		{
-			// projection
-			// paramteric t
-			// get min max
+			float projection = Vector2::dot(Vector2(a.x, a.y), axis);
+			minA = std::min(minA, projection);
+			maxA = std::max(maxA, projection);
 		}
 
+		for (Point b : shapeB)
+		{
+			float projection = Vector2::dot(Vector2(b.x, b.y), axis);
+			minB = std::min(minB, projection);
+			maxB = std::max(maxB, projection);
+		}
+
+		if (maxA < minB || maxB < minA) {
+			return false;
+		}
 	}
-	// for(Point axis : axes)
-	// {
-	// 	float squaredMagAxis = axis.x * axis.x + axis.y * axis.y;
 
-	// 	Point currentMinA = {0,0};
-	// 	Point currentMaxA = {0,0};
-	// 	Point currentMinB = {0,0};
-	// 	Point currentMaxB = {0,0};
-
-	// 	for(Point a : shapeA)
-	// 	{
-	// 		float dotProdA = (a.x * axis.x) + (a.y * axis.y);
-	// 		// Point projA = Point{dotProdA/squaredMagAxis * axis.x, dotProdA/squaredMagAxis.y * axis.y};
-
-	// 		// if (p)
-	// 		// currentMinA = 
-	// 		// currentMaxA = 
-	// 		// get the min/max
-			
-	// 	}
-	// 	for(Point b : shapeB)
-	// 	{
-	// 		float dotProdB = (b.x * axis.x) + (b.y * axis.y);
-	// 		// Point projB = Point{dotProdB/squaredMagAxis * axis.x, dotProdB/squaredMagAxis.y * axis.y};
-
-	// 		// get the min/max
-			
-	// 	}
-	// 	// if compare to check overlap
-		
-	// }
-	// projections
-	// float squaredMag = x * x + y * y + z * z;
-	// 	static float dot(Vector3 a, Vector3 b)
-	// {
-	// 	float dotProd = (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
-	// 	return dotProd;
-	// }
-	// static Vector3 project(Vector3 a, Vector3 b)
-	// {
-	// 	float dotProd = dot(a, b);
-	// 	float bSqMag = b.squaredMagnitude();
-		
-	// 	Vector3 proj = Vector3((dotProd/bSqMag) * b.x, (dotProd/bSqMag) * b.y, (dotProd/bSqMag) * b.z);
-	// 	return proj;
-	// }
-
-	
-	// it was parenthesis with Vector bc they added () params or smth to it
-	
-	
-	return false;
+	return true;
 }
 
 // ----------------------------------------------------------------------------------
