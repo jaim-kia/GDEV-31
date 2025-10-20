@@ -12,15 +12,99 @@
  * Point class
  */
 struct Point {
-	/**
-	 * X-coordinate of the point
-	 */
 	float x;
-
-	/**
-	 * Y-coordinate of the point
-	 */
 	float y;
+
+	Point(float newX, float newY)
+	{
+		x = newX;
+		y = newY;
+	}
+
+	Point()
+		: Point(0.0f, 0.0f)
+	{
+	}
+};
+
+struct Vector2
+{
+	public:
+		float x;
+		float y;
+
+		Vector2(float newX, float newY)
+		{
+			x = newX;
+			y = newY;
+		}
+
+		Vector2()
+			: Vector2(0.0f, 0.0f)
+		{
+		}
+
+		Vector2 operator-() const
+		{
+			return Vector2(-x, -y);
+		}
+		Vector2 negative()
+		{
+			Vector2 ret = -(*this);
+
+			if (ret.x == 0) ret.x = 0;
+			if (ret.y == 0) ret.y = 0;
+			return ret;
+		}
+
+		bool operator==(const Vector2& other) const {
+			return (x == other.x && y == other.y);
+		}
+
+		static Vector2 subtract(Point a, Point b)
+		{
+			return Vector2{a.x - b.x, a.y - b.y};
+		}
+
+		float magnitude() {
+			float mag = std::sqrt(x * x + y * y);
+			return mag;
+		}
+		
+		float squaredMagnitude() {
+			float squaredMag = x * x + y * y;
+			return squaredMag;
+		}
+
+		Vector2 normalized() {
+			float mag = magnitude();
+			Vector2 norm;
+			if (mag > 0) {
+				norm = Vector2(x/mag, y/mag);
+			} else {
+				norm = Vector2(0, 0);
+			}
+			return norm;
+		}
+
+		Vector2 perp() {
+			return Vector2(-y, x);
+		}
+
+		static float dot(Vector2 a, Vector2 b)
+		{
+			float dotProd = (a.x * b.x) + (a.y * b.y);
+			return dotProd;
+		}
+
+		static Vector2 project(Vector2 a, Vector2 b)
+		{
+			float dotProd = dot(a, b);
+			float bSqMag = b.squaredMagnitude();
+			
+			Vector2 proj = Vector2((dotProd/bSqMag) * b.x, (dotProd/bSqMag) * b.y);
+			return proj;
+		}
 };
 
 /**
@@ -42,92 +126,102 @@ bool SAT(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	// if min of shape1 is greater than the max of shape2
 	// 
 
-	std::vector<Point> normals;
+	std::vector<Vector2> normals;
 	
 	for(int i = 0; i < shapeA.size() ; i++) 
 	{
-		Point p;
+		Vector2 v;
 		if (i == shapeA.size()-1)
 		{
-			p = Point{shapeA[i].x - shapeA[0].x, shapeA[i].y - shapeA[0].y};
+			v = Vector2::subtract(shapeA[i], shapeA[0]);
 		} else {
-			p = Point{shapeA[i].x - shapeA[i+1].x, shapeA[i].y - shapeA[i+1].y};
+			v = Vector2::subtract(shapeA[i], shapeA[i+1]);
 		}
 
-		Point normal_p = Point{-p.y, p.x};
-		float magnitude = sqrt(p.x*p.x + p.y*p.y);
-		Point normalized_p = Point{p.x / magnitude, p.y / magnitude};
-		normals.push_back(normalized_p);
+		Vector2 normal_p = v.perp();
+		normals.push_back(normal_p.normalized());
 	}
 	
 	for(int i = 0; i < shapeB.size() ; i++) 
 	{
-		Point p; 
+		Vector2 v;
 		if (i == shapeB.size()-1)
 		{
-			p = Point{shapeB[i].x - shapeB[0].x, shapeB[i].y - shapeB[0].y};
+			v = Vector2::subtract(shapeB[i], shapeB[0]);
 		} else {
-			p = Point{shapeB[i].x - shapeB[i+1].x, shapeB[i].y - shapeB[i+1].y};
+			v = Vector2::subtract(shapeB[i], shapeB[i+1]);
 		}
-		
-		Point normal_p = Point{-p.y, p.x};
-		float magnitude = sqrt(p.x*p.x + p.y*p.y);
-		Point normalized_p = Point{p.x / magnitude, p.y / magnitude};
-		normals.push_back(normalized_p);
+
+		Vector2 normal_p = v.perp();
+		normals.push_back(normal_p.normalized());
 	}
 
 	for(int i = 0; i < normals.size() ; i++)
 	{
-		
-		for(int j = 1; j < normals.size() ; j++)
+		for(int j = i + 1; j < normals.size(); j++)
 		{
-			if ((normals[i].x == normals[j].x && normals[i].y == normals[j].y) ||
-				(normals[i].x == -normals[j].x && normals[i].y == -normals[j].y))
+			if ((normals[i] == normals[j]) || (normals[i] == normals[j].negative()))
 			{
-				normals.erase(normals.begin() + i); 
+				normals.erase(normals.begin() + j);
+				j--;
 			}
 		}
 	}
 
 	// getting the axes
-	std::vector<Point> axes;
-	for(Point p : normals)
+	std::vector<Vector2> axes;
+	for(Vector2 v : normals)
 	{
-		Point axis = Point{-p.y, p.x};
+		Vector2 axis = v.perp();
 		axes.push_back(axis);
 	}
 
-	for(Point axis : axes)
+	for (Vector2 axis : axes)
 	{
-		float squaredMagAxis = axis.x * axis.x + axis.y * axis.y;
+		Point minA = Point();
+		Point maxA = Point();
+		Point minB = Point();
+		Point maxB = Point();
 
-		Point currentMinA = {0,0};
-		Point currentMaxA = {0,0};
-		Point currentMinB = {0,0};
-		Point currentMaxB = {0,0};
-
-		for(Point a : shapeA)
+		for (Point a : shapeA)
 		{
-			float dotProdA = (a.x * axis.x) + (a.y * axis.y);
-			Point projA = Point{dotProdA/squaredMagAxis * axis.x, dotProdA/squaredMagAxis.y * axis.y};
-
-			if (p)
-			currentMinA = 
-			currentMaxA = 
-			// get the min/max
-			
+			// projection
+			// paramteric t
+			// get min max
 		}
-		for(Point b : shapeB)
-		{
-			float dotProdB = (b.x * axis.x) + (b.y * axis.y);
-			Point projB = Point{dotProdB/squaredMagAxis * axis.x, dotProdB/squaredMagAxis.y * axis.y};
 
-			// get the min/max
-			
-		}
-		// if compare to check overlap
-		
 	}
+	// for(Point axis : axes)
+	// {
+	// 	float squaredMagAxis = axis.x * axis.x + axis.y * axis.y;
+
+	// 	Point currentMinA = {0,0};
+	// 	Point currentMaxA = {0,0};
+	// 	Point currentMinB = {0,0};
+	// 	Point currentMaxB = {0,0};
+
+	// 	for(Point a : shapeA)
+	// 	{
+	// 		float dotProdA = (a.x * axis.x) + (a.y * axis.y);
+	// 		// Point projA = Point{dotProdA/squaredMagAxis * axis.x, dotProdA/squaredMagAxis.y * axis.y};
+
+	// 		// if (p)
+	// 		// currentMinA = 
+	// 		// currentMaxA = 
+	// 		// get the min/max
+			
+	// 	}
+	// 	for(Point b : shapeB)
+	// 	{
+	// 		float dotProdB = (b.x * axis.x) + (b.y * axis.y);
+	// 		// Point projB = Point{dotProdB/squaredMagAxis * axis.x, dotProdB/squaredMagAxis.y * axis.y};
+
+	// 		// get the min/max
+			
+	// 	}
+	// 	// if compare to check overlap
+		
+	// }
 	// projections
 	// float squaredMag = x * x + y * y + z * z;
 	// 	static float dot(Vector3 a, Vector3 b)
