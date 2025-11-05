@@ -23,6 +23,25 @@ struct Point {
 	 * Y-coordinate of the point
 	 */
 	float y;
+
+	Point(float newX, float newY)
+	{
+		x = newX;
+		y = newY;
+	}
+
+	Point()
+		: Point(0.0f, 0.0f)
+	{
+	}
+
+	Point operator-(const Point& other) const {
+        return Point(x - other.x, y - other.y);
+    }
+    
+    int cross(const Point& b) const {
+        return x * b.y - y * b.x;
+    }
 };
 
 bool comparePoints(const Point& a, const Point& b) {
@@ -44,24 +63,49 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
 	std::vector<Point> sortedPoints = shape;
 	std::sort(sortedPoints.begin(), sortedPoints.end(), comparePoints);
 
-	for (const auto& p : sortedPoints) {
-		std::cout << "[ " << p.x << ", " << p.y << " ]" << "\n";
-	}
-	std::cout << "\n";
-
 	// step 2:	first two points are part of the upper hull
-
-
 	// step 3:	add  i=2 to i=n-1 to upper hull
 	// 			if the last 3 points do not make a right turn remove the middle
 	// 			right turn: given a = p1-po and b = p2-p0, it makes a LEFT turn a x b is negative
-
+    std::vector<Point> upperHull;
+    for (const auto& p : sortedPoints) {
+        while (upperHull.size() >= 2) {
+            Point p0 = upperHull[upperHull.size() - 2];
+            Point p1 = upperHull[upperHull.size() - 1];
+            if ((p1 - p0).cross(p - p0) <= 0) {
+                break;
+            }
+			// remove the last element in upperHull which at this point is the middle point
+            upperHull.pop_back();
+        }
+        upperHull.push_back(p);
+    }
 
 	// step 4:	construct the lower hull start with n-1 then n-2, then n-3 to 0
 	// 			do the same but this time it if it makes a right turn we remove the middle
 	// 			remove the first and last of the lower hull
+    std::vector<Point> lowerHull;
+    for (int i = sortedPoints.size() - 1; i >= 0; --i) {
+        const Point& p = sortedPoints[i];
 
-	return shape;
+        while (lowerHull.size() >= 2) {
+            Point p0 = lowerHull[lowerHull.size() - 2];
+            Point p1 = lowerHull[lowerHull.size() - 1];
+            if ((p1 - p0).cross(p - p0) <= 0) {
+                break;
+            }
+			// remove the last element in lowerHull which at this point is the middle point
+            lowerHull.pop_back();
+        }
+        lowerHull.push_back(p);
+    }
+
+	// merge
+	upperHull.pop_back();
+	lowerHull.pop_back();
+
+	upperHull.insert(upperHull.end(), lowerHull.begin(), lowerHull.end());
+    return upperHull;
 }
 
 
