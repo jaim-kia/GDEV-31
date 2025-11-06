@@ -39,9 +39,18 @@ struct Point {
         return Point(x - other.x, y - other.y);
     }
     
-    int cross(const Point& b) const {
+    float cross(const Point& b) const {
         return x * b.y - y * b.x;
     }
+
+	float dot(const Point& b) const {
+		return x * b.x + y * b.y;
+	}
+
+	static Point multiply(Point point, float scalarVal)
+	{
+		return Point(point.x * scalarVal, point.y * scalarVal);
+	}
 };
 
 bool comparePoints(const Point& a, const Point& b) {
@@ -108,6 +117,21 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
     return upperHull;
 }
 
+// Support Function for GJK Algorithm
+Point Support(const std::vector<Point>& shape, const Point& dir) {
+	float maxDot = shape[0].x * dir.x + shape[0].y * dir.y;
+	Point maxPoint;
+
+	for (const auto& p : shape) {
+		float currentDot = p.x * dir.x + p.y * dir.y;
+		if (currentDot > maxDot) {
+			maxDot = currentDot;
+			maxPoint = p;
+		}
+	}
+
+	return maxPoint;
+}
 
 /**
  * @brief Checks whether the two specified convex shapes are overlapping or not
@@ -118,6 +142,18 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
  */
 bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	// TODO: Implement
+	Point dirB = Point(1,0);
+	Point pointB = Support(shapeA, dirB) - Support(shapeB, dirB);
+	
+	Point dirA = Point() - pointB;
+	Point pointA = Support(shapeA, dirA) - Support(shapeB, dirB);
+
+	if (pointA.dot(dirA) <= 0) {
+		return false;
+	} else {
+		Point ab = pointB - pointA;
+		Point abPerp =  -(multiply(ab, ab.dot(dirA))) + multiply(dirA, ab.dot(ab));
+	}
 
 	return false;
 }
