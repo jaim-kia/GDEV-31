@@ -75,18 +75,11 @@ bool comparePoints(const Point& a, const Point& b) {
  * @return Returns a list of points specifying the convex hull of the polygon
  */
 std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
-	// TODO: Implement
-	// andrews algo
 
-	// step 1:	sort by increasing x if same x sort by increasing y
 	std::vector<Point> sortedPoints = shape;
 	std::sort(sortedPoints.begin(), sortedPoints.end(), comparePoints);
 
-	// step 2:	first two points are part of the upper hull
-	// step 3:	add  i=2 to i=n-1 to upper hull
-	// 			if the last 3 points do not make a right turn remove the middle
-	// 			right turn: given a = p1-po and b = p2-p0, it makes a LEFT turn a x b is negative
-    std::vector<Point> upperHull;
+	std::vector<Point> upperHull;
     for (const auto& p : sortedPoints) {
         while (upperHull.size() >= 2) {
             Point p0 = upperHull[upperHull.size() - 2];
@@ -100,10 +93,7 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
         upperHull.push_back(p);
     }
 
-	// step 4:	construct the lower hull start with n-1 then n-2, then n-3 to 0
-	// 			do the same but this time it if it makes a right turn we remove the middle
-	// 			remove the first and last of the lower hull
-    std::vector<Point> lowerHull;
+	std::vector<Point> lowerHull;
     for (int i = sortedPoints.size() - 1; i >= 0; --i) {
         const Point& p = sortedPoints[i];
 
@@ -122,8 +112,8 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
 	// merge
 	upperHull.pop_back();
 	lowerHull.pop_back();
-
 	upperHull.insert(upperHull.end(), lowerHull.begin(), lowerHull.end());
+
     return upperHull;
 }
 
