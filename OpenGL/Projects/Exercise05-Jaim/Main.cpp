@@ -130,7 +130,8 @@ std::vector<Point> ConvexHull(const std::vector<Point>& shape) {
 // Support Function for GJK Algorithm
 Point Support(const std::vector<Point>& shape, const Point& dir) {
 	float maxDot = shape[0].x * dir.x + shape[0].y * dir.y;
-	Point maxPoint;
+	// initialize in case the first element is the max
+	Point maxPoint = shape[0];
 
 	for (const auto& p : shape) {
 		float currentDot = p.x * dir.x + p.y * dir.y;
@@ -139,7 +140,6 @@ Point Support(const std::vector<Point>& shape, const Point& dir) {
 			maxPoint = p;
 		}
 	}
-
 	return maxPoint;
 }
 
@@ -155,13 +155,12 @@ Point tripleProduct(const Point& a, const Point& b, const Point& c) {
  * @return Returns true if the two convex shapes are overlapping. Returns false otherwise.
  */
 bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
-	// TODO: Implement
 
 	Point dir = Point(1,0);
-	Point pointB = Support(shapeA, dir) - Support(shapeB, Point(-dir.x, dir.y));
+	Point pointB = Support(shapeA, dir) - Support(shapeB, -dir);
 
 	dir = Point(-pointB.x, -pointB.y);
-	Point pointA = Support(shapeA, dir) - Support(shapeB, Point(-dir.x, dir.y));
+	Point pointA = Support(shapeA, dir) - Support(shapeB, -dir);
 
 	if (pointA.dot(dir) <= 0) {
 		return false; 
@@ -173,16 +172,16 @@ bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 
 	for (int i = 0; i <= 30; i++) {
 
+		// update values so that the most recent is pointA
 		Point pointC = pointB;
 		pointB = pointA;
 		pointA = Support(shapeA, dir) - Support(shapeB, -dir);
 	
-		// unsure if needed (same logic as earlier when I got pointA):
 		if (pointA.dot(dir) <= 0) {
 			return false;
 		}
 
-		// le triangle
+		// making the triangle
 		Point ao = Point(-pointA.x, -pointA.y);
 		Point ab = pointB - pointA;
 		Point ac = pointC - pointA;
@@ -190,15 +189,14 @@ bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 		Point abPerp = tripleProduct(ac, ab, ab);
 
 		if (abPerp.dot(ao) > 0) {
-			// remove C
-			pointA = pointC;
+			// remove C - no need because C is overridden every iteration based on B
 			dir = abPerp;
 
 		} else {
 			Point acPerp = tripleProduct(ab, ac, ac);
 
 			if (acPerp.dot(ao) > 0) {
-				// remove B
+				// remove B - override B with C so that pointC is still point C in the next iteration
 				pointB = pointC;
 				dir = acPerp;
 			} else {
