@@ -35,6 +35,10 @@ struct Point {
 	{
 	}
 
+	Point operator+(const Point& other) const {
+        return Point(x + other.x, y + other.y);
+    }
+
 	Point operator-(const Point& other) const {
         return Point(x - other.x, y - other.y);
     }
@@ -47,10 +51,16 @@ struct Point {
 		return x * b.x + y * b.y;
 	}
 
-	static Point multiply(Point point, float scalarVal)
+	static Point multiply(Point vec, float scalarVal)
 	{
-		return Point(point.x * scalarVal, point.y * scalarVal);
+		Point result = Point(vec.x * scalarVal, vec.y * scalarVal);
+		return result;
 	}
+
+	Point operator-() const
+    {
+        return Point(-x, -y);
+    }
 };
 
 bool comparePoints(const Point& a, const Point& b) {
@@ -133,6 +143,10 @@ Point Support(const std::vector<Point>& shape, const Point& dir) {
 	return maxPoint;
 }
 
+Point tripleProduct(const Point& a, const Point& b, const Point& c) {
+	return Point(-c.dot(b) * a.x + c.dot(a) * b.x, -c.dot(b) * a.y + c.dot(a) * b.y);
+}
+
 /**
  * @brief Checks whether the two specified convex shapes are overlapping or not
  * using the GJK algorithm
@@ -142,19 +156,56 @@ Point Support(const std::vector<Point>& shape, const Point& dir) {
  */
 bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	// TODO: Implement
-	Point dirB = Point(1,0);
-	Point pointB = Support(shapeA, dirB) - Support(shapeB, dirB);
-	
-	Point dirA = Point() - pointB;
-	Point pointA = Support(shapeA, dirA) - Support(shapeB, dirB);
 
-	if (pointA.dot(dirA) <= 0) {
-		return false;
-	} else {
-		Point ab = pointB - pointA;
-		Point abPerp =  -(multiply(ab, ab.dot(dirA))) + multiply(dirA, ab.dot(ab));
+	Point dir = Point(1,0);
+	Point pointB = Support(shapeA, dir) - Support(shapeB, Point(-dir.x, dir.y));
+
+	dir = Point(-pointB.x, -pointB.y);
+	Point pointA = Support(shapeA, dir) - Support(shapeB, Point(-dir.x, dir.y));
+
+	if (pointA.dot(dir) <= 0) {
+		return false; 
 	}
 
+	Point ab = pointB - pointA;
+	Point ao = Point(-pointA.x, -pointA.y);
+	dir = tripleProduct(ab, ao, ab);
+
+	for (int i = 0; i <= 30; i++) {
+
+		Point pointC = pointB;
+		pointB = pointA;
+		pointA = Support(shapeA, dir) - Support(shapeB, -dir);
+	
+		// unsure if needed (same logic as earlier when I got pointA):
+		if (pointA.dot(dir) <= 0) {
+			return false;
+		}
+
+		// le triangle
+		Point ao = Point(-pointA.x, -pointA.y);
+		Point ab = pointB - pointA;
+		Point ac = pointC - pointA;
+
+		Point abPerp = tripleProduct(ac, ab, ab);
+
+		if (abPerp.dot(ao) > 0) {
+			// remove C
+			pointA = pointC;
+			dir = abPerp;
+
+		} else {
+			Point acPerp = tripleProduct(ab, ac, ac);
+
+			if (acPerp.dot(ao) > 0) {
+				// remove B
+				pointB = pointC;
+				dir = acPerp;
+			} else {
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
