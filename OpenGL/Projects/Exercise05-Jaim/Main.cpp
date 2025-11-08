@@ -160,6 +160,7 @@ bool GJK(const std::vector<Point>& shapeA, const std::vector<Point>& shapeB) {
 	Point ao = Point(-pointA.x, -pointA.y);
 	dir = tripleProduct(ab, ao, ab);
 
+	// max iterations is an arbitrary number larger than the total no. of points in the minkowski diff.
 	for (int i = 0; i <= 30; i++) {
 
 		// update values so that the most recent is pointA
