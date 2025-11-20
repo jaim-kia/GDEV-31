@@ -107,7 +107,6 @@ std::vector<Triangle> Triangulate(const Polygon& polygon) {
 			const Point& vCurrent = workingOutline[i];
 			const Point& vNext = workingOutline[nextIndex];
 
-			
 			// check if E is convex (cross product > 0)
 			float cross = (vCurrent - vPrev).cross(vNext - vCurrent);
 
