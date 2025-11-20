@@ -21,6 +21,25 @@ struct Point {
 	 * Y-coordinate of the point
 	 */
 	float y;
+
+	Point(float newX, float newY)
+	{
+		x = newX;
+		y = newY;
+	}
+
+	Point()
+		: Point(0.0f, 0.0f)
+	{
+	}
+
+	Point operator-(const Point& other) const {
+        return Point(x - other.x, y - other.y);
+    }
+
+	float cross(const Point& b) const {
+        return x * b.y - y * b.x;
+    }
 };
 
 /**
@@ -41,6 +60,10 @@ struct Triangle {
 	 * Third point
 	 */
 	Point c;
+
+	Triangle(Point newA, Point newB, Point newC)
+	: a(newA), b(newB), c(newC)
+    {}
 };
 
 /**
@@ -58,15 +81,59 @@ struct Polygon {
 	std::vector< std::vector<Point> > holes;
 };
 
+bool isPointInsideTriangle(const Point& A, const Point& B, const Point& C, const Point& P) {
+    float cross1 = (B - A).cross(P - A);
+    float cross2 = (C - B).cross(P - B);
+    float cross3 = (A - C).cross(P - C);
+    
+    return (cross1 >= 0 && cross2 >= 0 && cross3 >= 0) ||  (cross1 <= 0 && cross2 <= 0 && cross3 <= 0);
+}
+
 /**
  * @brief Splits the specified polygon into a set of triangles
  * @param[in] polygon Polygon 
  */
 std::vector<Triangle> Triangulate(const Polygon& polygon) {
 	std::vector<Triangle> ret;
+	std::vector<Point> workingOutline = polygon.outline;
 
-	// TODO: Implement
+	while (workingOutline.size() > 3) {
+		// earclip
+		for (int i = 0; i < workingOutline.size(); i++) {
+			int prevIndex = (i - 1 + workingOutline.size()) % workingOutline.size();
+			int nextIndex = (i + 1) % workingOutline.size();
+			
+			const Point& vPrev = workingOutline[prevIndex];
+			const Point& vCurrent = workingOutline[i];
+			const Point& vNext = workingOutline[nextIndex];
 
+			
+			// check if E is convex (cross product > 0)
+			float cross = (vCurrent - vPrev).cross(vNext - vCurrent);
+
+			// check if no other vertices inside triangle
+            bool hasPointsInside = false;
+            for (int j = 0; j < workingOutline.size(); j++) {
+                if (j == i || j == prevIndex || j == nextIndex) continue;
+                
+                if (isPointInsideTriangle(vPrev, vCurrent, vNext, workingOutline[j])) {
+                    hasPointsInside = true;
+                    break;
+                }
+            }
+
+			// if both YES, then clip ear (add these 3 vertices as a triangle to the ret, remove vCurrent from polygon outline)
+			if (cross > 0 && !hasPointsInside) {
+				ret.push_back(Triangle(vPrev, vCurrent, vNext));
+				workingOutline.erase(workingOutline.begin() + i);
+				break;
+			}
+		}
+	}
+
+	if (workingOutline.size() == 3) {
+        ret.push_back(Triangle(workingOutline[0], workingOutline[1], workingOutline[2]));
+    }
 	return ret;
 }
 
