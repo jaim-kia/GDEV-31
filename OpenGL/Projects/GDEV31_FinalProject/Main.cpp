@@ -21,6 +21,17 @@ struct Point {
 
     /** Y-coordinate */
     float y;
+
+	Point(float newX, float newY)
+	{
+		x = newX;
+		y = newY;
+	}
+
+	Point()
+		: Point(0.0f, 0.0f)
+	{
+	}
 };
 
 /**
@@ -59,7 +70,12 @@ std::vector<Cell> VoronoiDiagram(std::vector<Point>& sites) {
     for (auto& s : sites) {
         Cell cell;
         cell.site = s;
-        cell.vertices = {}; 
+        cell.vertices = {};
+
+		// if 1 treat the whole plane as a cell
+		// if 2 insert in the cell,
+		// if 3 onwards, insert site find which cell it is 
+
         voronoiCells.push_back(cell);
     }
 
