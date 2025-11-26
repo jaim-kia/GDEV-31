@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <vector>
+#include <cstdlib>
 
 /**
  * @brief Path to the input file
@@ -32,6 +33,14 @@ struct Point {
 		: Point(0.0f, 0.0f)
 	{
 	}
+
+	Point operator-(const Point& other) const {
+        return Point(x - other.x, y - other.y);
+    }
+
+	float cross(const Point& b) const {
+        return x * b.y - y * b.x;
+    }
 };
 
 /**
@@ -44,8 +53,11 @@ struct Cell {
     /** Vertices forming the boundary of the cell */
     std::vector<Point> vertices;
 
-    /** Placeholder edge color */
-    float edgeColor[3] = {1.0f, 1.0f, 1.0f};
+    /** Red edge color */
+    float edgeColor[3] = {1.0f, 0.0f, 0.0f};
+
+	/** Cell color */
+	float cellColor[3] = {0.0f, 0.0f, 0.0f};
 };
 
 /**
@@ -62,129 +74,142 @@ float eucDist (Point& a, Point& b) {
 	return dist;
 }
 
-
-
-
+// takes in a polygon and a bisector
+// returns a polygon cut or clipped down by the bisector
+// tldr: gets the norm of the bisector in order to determine which side to keep (+ norm)
+// technically a cell builder 
 std::vector<Point> ClipPolygonByLine(const std::vector<Point>& polygon, Point line_p0, Point line_p1) {
-	if (polygon.empty()) {
-		return {};
-	}
-	std::vector<Point> clippedPolygon;
+    if (polygon.empty()) {
+        return {};
+    }
+    std::vector<Point> clippedPolygon;
 
-	// get the normal ; perp the bisector and its positive value tells us which side the site is in
-	float norm_x = -(line_p1.y - line_p0.y);
-	float norm_y = (line_p1.x - line_p0.x);
+    // Calculate normal vector (perpendicular to the bisector)
+	// since this is the perp, it points counter-clockwise i.e. away from the site
+    float norm_x = -(line_p1.y - line_p0.y);
+    float norm_y = (line_p1.x - line_p0.x);
 
-	for (int i = 0; i < polygon.size(); ++i) {
+	// goes through all vertices in the polygon and see which ones to retain
+    for (int i = 0; i < polygon.size(); ++i) {
 
-		// get current and next point in polygon to draw the edge
-		Point current = polygon[i];
-		Point next = polygon[(i + 1) % polygon.size()];
+		// get the edge of the polygon
+        Point current = polygon[i];
+        Point next = polygon[(i + 1) % polygon.size()];
 
-		// get the points that are on the side of the line where the site is located
-		float current_dist = norm_x * (current.x - line_p0.x) + norm_y * (current.y - line_p0.y);
+        // Calculate signed distance from line creates a vector from 
+		// current point to the p0 of the biesector and dot product to the norm
+		// we want to check if the created vector is facing the same direction as the norm
+        float current_dist = norm_x * (current.x - line_p0.x) + norm_y * (current.y - line_p0.y);
         float next_dist = norm_x * (next.x - line_p0.x) + norm_y * (next.y - line_p0.y);
-		
-		if (current_dist <= 0) { // both current and next point are in the sa
-			clippedPolygon.push_back(current);
+        
+		// meaning site is facing away from the bisector
+		// we want all the points that are facing from the norm hence <= 0
+        bool currentInside = current_dist <= 0; 
+        bool nextInside = next_dist <= 0;
 
-			if (next_dist > 0) {
-				// current is inside, next is outside - find intersect, add it
-				float t = current_dist / (current_dist - next_dist);
-				Point intersection;
-				intersection.x = current.x + t * (next.x - current.x);
-				intersection.y = current.y + t * (next.y - current.y);
-				clippedPolygon.push_back(intersection);
-			}
-		} else if (next_dist <= 0) {
-			// current is outside, next is inside - find intersect, add it
-			// 
-			float t = current_dist / (current_dist - next_dist);
-			Point intersection;
-			intersection.x = current.x + t * (next.x - current.x);
-			intersection.y = current.y + t * (next.y - current.y);
-			clippedPolygon.push_back(intersection);
-		}
-	}
-	
-	return clippedPolygon;
+        if (currentInside) {
+			// accept when the current point is inside
+            clippedPolygon.push_back(current);
+        }
+
+		// in case the other point of the edge is not on the side of the bisector
+        if (currentInside != nextInside) {
+            // Calculate intersection point of the edge and the bisector
+			// because it intersects, its distance from the edge is 0.
+			// This will be a new vertex that will be part of the cell
+			// let t be the ratio between the edge and where the bisector intersects
+			// current + t * (next - current) = 0
+			//  t * (next - current) = -current
+			//  t = -current / (next - current)
+			//  t = -current / -(current - next)
+			//  t = current / (current - next)
+            float t = current_dist / (current_dist - next_dist);  
+
+            Point intersection;
+			// get the x coordinate based on the calculated ratio t on the edge
+            intersection.x = current.x + t * (next.x - current.x);
+			// get the y coordinate based on the calculated ratio t on the edge
+            intersection.y = current.y + t * (next.y - current.y);
+
+			// add the new point as a vertex in the polygon
+            clippedPolygon.push_back(intersection);
+        }
+
+		// Ignore the points if both are outside the bisector
+    }
+    
+    return clippedPolygon;
 }
 
-/**
- * @brief Constructs Voronoi cells for a given set of site points.
- * 
- * @param sites List of site points
- * @return std::vector<Cell> Generated Voronoi cells
- * 
- * 
- */
 std::vector<Cell> VoronoiDiagram(std::vector<Point>& sites) {
     std::vector<Cell> voronoiCells;
 
-	float minX = 0.0f;
-    float maxX = 1280.0f;
-    float minY = 0.0f;
-    float maxY = 720.0f;
+    float min_x = -100000.0f;
+    float max_x = 100000.0f;
+    float min_y = -100000.0f;
+    float max_y = 100000.0f;
 
-    // TO-DO. Each site currently gets an empty cell (no edges or vertices).
-	// in i = 0 you start with box, clip it with every exisisting sites O(n^2), inserting i= 0  its the final
-	int i = 0;
-    for (size_t i = 0; i < sites.size(); ++i) {
+    for (int i = 0; i < sites.size(); ++i) {
         Cell cell;
         cell.site = sites[i];
-        cell.vertices = {}; // what makes up the cell polygon
-		cell.vertices.push_back(Point(minX, minY));
-		cell.vertices.push_back(Point(minX, maxY));
-		cell.vertices.push_back(Point(maxX, maxY));
-		cell.vertices.push_back(Point(maxX, minY));
+        
+        // Start with the bounding box
+        cell.vertices = {
+            Point(min_x, min_y),
+            Point(min_x, max_y),
+            Point(max_x, max_y),
+            Point(max_x, min_y)
+        };
 
-		// by this point the starting cell is the window
+        // Clip against bisectors with all other sites
+        for (int j = 0; j < sites.size(); ++j) {
+			// check if the bisectors cut out new cells
+            if (i == j) continue;
 
-		// bisectors
-		
+            Point& p_i = sites[i];
+            Point& p_j = sites[j];
+            
+            // Calculate midpoint
+            float mid_x = (p_i.x + p_j.x) / 2.0f;
+            float mid_y = (p_i.y + p_j.y) / 2.0f;
 
-		// this for loop updates the existing voronoi cells
-		for (int j = 0; j < sites.size(); ++j) {
-			if (i == j) continue;
+            // Calculate direction vector from p_i to p_j
+            float dir_x = p_j.x - p_i.x;
+            float dir_y = p_j.y - p_i.y;
+            
+            // The bisector is perpendicular to the direction vector
+			// extend them with a bigger number to make it into a line on both sides
+			// stretching them based on the direction with the mid point as the anchor point
+            Point bisector_p0(
+                mid_x - dir_y *1000.0f,  
+                mid_y + dir_x * 1000.0f
+            );
+            Point bisector_p1(
+                mid_x + dir_y * 1000.0f,   
+                mid_y - dir_x * 1000.0f
+            );
 
-			Point& p_i = sites[i]; // most recent added sites ex. i = 8
-			Point& p_j = sites[j]; // existing site of the current iteration of voronoi cell (j) ex. j = 0 -> 7
-			
-			// midpoint for the perpendicular bisector
-			float midX = (p_i.x + p_j.x) / 2.0f;
-			float midY = (p_i.y + p_j.y) / 2.0f;
+            // create cells given the calculated bisector
+			// start with the "box" made at the start
+            cell.vertices = ClipPolygonByLine(cell.vertices, bisector_p0, bisector_p1);
+            
+            // // Early exit if polygon becomes empty
+            // if (cell.vertices.empty()) break;
+        }
 
-			float vec_x = p_j.x - p_i.x; // vector from the most recent site i to existing sites j
-			float vec_y = p_j.y - p_i.y; // vector from the most recent site i to existing sites j
-			
-			// begin forming bisectors
-			// two most recent bisectors
-			Point bisector_p0(midX + vec_y * 1000.0f, midY - vec_x * 1000.0f); 
-			Point bisector_p1(midX - vec_x * 1000.0f, midY + vec_x * 1000.0f); 
+		// set color of the cell based on the order; make them unique with randomness
+		float random_val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+		float random_color_val = 0 + random_val * (1 - 0);
+		cell.cellColor[0] += random_color_val;
 
-			// so at this point, the current site i only has one bisector what do we do? we add more bisectors haha
-			cell.vertices = ClipPolygonByLine(cell.vertices, bisector_p0, bisector_p1);
-			// adds more bisectors until no more 
-			
-			
-			// check what polygon the site exists in
-			// compare t.site each of the exisitng) with cell.site (current)
-			// for (auto& c : voronoiCint i = 0; iells) [
-			// 	shortest
-			// 	dist = get_distance(t.site, cell.site);
-			// 	// store the shortest value
-			// ]
-			
-			// shortest_dist = 
-			// create perp bisectotr between site (whatever t.site is) and the newest site (whatever sites[i] is)
+		random_val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+		random_color_val = 0 + random_val * (1 - 0);
+		cell.cellColor[1] += random_color_val;
 
-			// when i = 2 onwards
-			// use eucleadian dist to check which other sites in voronoi cells are closer to the current site than the site of
-			// the polygon it is in 
-		}
-
+		random_val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+		random_color_val = 0 + random_val * (1 - 0);
+		cell.cellColor[2] += random_color_val;
         voronoiCells.push_back(cell);
-		++i;
     }
 
     return voronoiCells;
@@ -389,6 +414,19 @@ void AppendCircleVertices(const Point& center, float radius, std::vector<Vertex>
 	}
 }
 
+// copy pasted from previous exercise
+void AppendShapeVertices(const std::vector<Point>& points, std::vector<Vertex>& vertices, float zOrder = 0.0f, float r = 1.0f, float g = 1.0f, float b = 1.0f) {
+	if (points.size() < 2) {
+		return;
+	}
+	for (size_t i = 2; i < points.size(); ++i) {
+		vertices.push_back( { points[0].x, points[0].y, zOrder, r, g, b } );
+		vertices.push_back( { points[i - 1].x, points[i - 1].y, zOrder, r, g, b } );
+		vertices.push_back( { points[i].x, points[i].y, zOrder, r, g, b } );
+	}
+}
+
+
 // The RefreshScene() function draws the sites and cells of the Voronoi, so if you want to
 // make edits to the render, edit that function.
 
@@ -413,6 +451,8 @@ void RefreshScene(AppData* data) {
             Point p0 = cell.vertices[i];
             Point p1 = cell.vertices[(i + 1) % cell.vertices.size()];
             AppendLineVertices(p0, p1, 2.0f, vertices, 0.0f, cell.edgeColor[0], cell.edgeColor[1], cell.edgeColor[2]);
+			// add vertex polygon to shade
+			AppendShapeVertices(cell.vertices, vertices, 0.0f, cell.cellColor[0], cell.cellColor[1], cell.cellColor[2]);
         }
 
     }
